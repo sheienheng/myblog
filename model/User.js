@@ -5,10 +5,6 @@ function User(user) {
     this.password = user.password;
     this.email = user.email;
 }
-// function report(report) {
-//     this.postname = report.postname;
-//     this.connect = report.connect;
-// }
 
 User.prototype.save = function (callback) {
     var user = {

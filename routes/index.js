@@ -1,18 +1,36 @@
 //引入User.js集合操作方法
 var User = require('../model/User');
+
 var crypto = require('crypto');
+function checkLogin(req,res,next) {
+    if(!req.session.user){
+        req.flash('error','未登录');
+        return res.redirect('/login');
+    }
+    next();
+}
+function checkNotLogin(req,res,next) {
+    if(req.session.user){
+        req.flash('error','已登录');
+        return res.redirect('back');
+    }
+    next();
+}
 module.exports = function (app) {
     //首页
     app.get('/',function (req,res) {
+
         res.render('index',{
             title:'首页页面',
             user:req.session.user,
             success:req.flash('success').toString(),
             error:req.flash('error').toString()
+
+
         })
     });
     //注册页面
-    app.get('/reg',function (req,res) {
+    app.get('/reg',checkNotLogin,function (req,res) {
         res.render('reg',{
             title:'注册页面',
             user:req.session.user,
@@ -67,7 +85,7 @@ module.exports = function (app) {
     })
     });
     //登录页面
-    app.get('/login',function (req,res) {
+    app.get('/login',checkNotLogin,function (req,res) {
         res.render('login',{
             title:'登录页面',
             user:req.session.user,
@@ -77,15 +95,15 @@ module.exports = function (app) {
     });
     //登录行为
     app.post('/login',function (req,res) {
+        //1.对密码进行加密
+        //2.判断用户是否存在
+        //3.判断密码是否正确
+        //4.把用户信息存在session上
         var username = req.body.username;
-        var password = req.body.password;
-        var newUser = new User({
-            username:username,
-            password:password,
-        })
+
         var md5 = crypto.createHash('md5');
         password = md5.update(req.body.password).digest('hex');//16进制加密
-        User.get(newUser.username,function (err,user) {
+        User.get(username,function (err,user) {
             if (err) {
                 req.flash('error', err);
                 return res.redirect('/login');
@@ -94,12 +112,8 @@ module.exports = function (app) {
                 req.flash('error', '用户名不存在');
                 return res.redirect('/login');
             }else{
-                console.log(password);
-                console.log(user.password);
-                // var md5 = crypto.createHash('md5');
-                // password = md5.update(password).digest('hex');
                 if(password == user.password){
-                    req.session.user = newUser;
+                    req.session.user = user;
                     req.flash('success','登录成功');
                     return res.redirect('/');
                 }else{
@@ -110,7 +124,7 @@ module.exports = function (app) {
         })
     });
     //发表页面
-    app.get('/post',function (req,res) {
+    app.get('/post',checkLogin,function (req,res) {
         res.render('post',{
             title:'发表页面',
             user:req.session.user,
@@ -118,13 +132,16 @@ module.exports = function (app) {
             error:req.flash('error').toString()
         })
     });
+
     //发表行为
     app.post('/post',function (req,res) {
 
+
     });
     //退出
-    app.get('/logout',function (req,res) {
-        req.session.user = '';
+    app.get('/logout',checkLogin,function (req,res) {
+        //将session里边的信息清除，并给出提示信息，跳转到首页
+        req.session.user = null;
         req.flash('success','退出成功');
         return res.redirect('/');
     });
