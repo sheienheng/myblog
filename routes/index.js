@@ -1,6 +1,8 @@
 //引入User.js集合操作方法
 var User = require('../model/User');
 var Post = require('../model/Post');
+//字段
+var Comment = require('../model/comment');
 var crypto = require('crypto');
 //引入上穿的插件
 var multer = require('multer');
@@ -272,6 +274,30 @@ module.exports = function (app) {
             }
             req.flash('success','删除成功');
             return res.redirect('/');
+        })
+    })
+    function formatDate(num) {
+        return num < 10 ? '0' + num : num;
+    }
+    app.post('/comment/:name/:title/:time',function (req,res) {
+        console.log(req.body.c_content);
+        var date = new Date();
+        var now = date.getFullYear()+'年'+formatDate(date.getMonth()+1)+'月'+formatDate(date.getDate())+'日'
+            +'  '+formatDate(date.getHours())+':'+formatDate(date.getMinutes())+':'+formatDate(date.getSeconds());
+        var comment = {
+            c_name:req.session.user.username,
+            c_time:now,
+            c_content:req.body.c_content
+        }
+        console.log(comment);
+        var newComment = new Comment(req.params.name,req.params.title,req.params.time,comment);
+        newComment.save(function (err) {
+            if(err){
+                req.flash('error',err);
+                return res.redirect('/');
+            }
+            req.flash('success','留言成功');
+            return res.redirect('back');
         })
     })
 }
