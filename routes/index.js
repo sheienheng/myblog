@@ -31,7 +31,7 @@ function checkNotLogin(req,res,next) {
 module.exports = function (app) {
     //首页
     app.get('/',function (req,res) {
-        Post.get(null, function (err,docs) {
+        Post.getAll(null, function (err,docs) {
             if (err) {
                 posts = [];
             }
@@ -183,13 +183,9 @@ module.exports = function (app) {
         console.log('原始文件名：', file.originalname);
         console.log('文件大小：', file.size);
         console.log('文件保存路径：', file.path);
-        // console.log(file.path);
+
         req.flash('success','上传成功');
-        // var filepath = file.path;
-        // var filestr = filepath.substring(6);
-        // console.log(filestr);
-        // req.session.up = filestr;
-        // req.flash('up',file.path);
+
         return res.redirect('/upload');
     })
     //退出
@@ -199,4 +195,43 @@ module.exports = function (app) {
         req.flash('success','退出成功');
         return res.redirect('/');
     });
+//    添加一个用户页面  :name说明这个值是动态的
+    app.get('/u/:name',function (req,res) {
+        //1.检查用户是否存在
+        User.get(req.params.name,function (err,user) {
+            if(!user){
+                req.flash('error','用户不存在');
+                return res.redirect('/');
+            }
+        //    2.查询出name对应的该用户的所有文章
+            Post.getAll(user.username,function (err,docs) {
+                if(err){
+                    req.flash('error',err);
+                    res.redirect('/');
+                }
+                return res.render('user',{
+                    title:'用户文章列表',
+                    user:req.session.user,
+                    success:req.flash('success').toString(),
+                    error:req.flash('error').toString(),
+                    docs:docs
+                })
+            })
+        })
+    })
+    app.get('/u/:name/:title/:time',function (req,res) {
+        Post.getOne(req.params.name,req.params.title,req.params.time,function (err,doc) {
+            if(err){
+                req.flash('error',err);
+                return res.redirect('/');
+            }
+            return res.render('article',{
+                title:'文章详情列表',
+                user:req.session.user,
+                success:req.flash('success').toString(),
+                error:req.flash('error').toString(),
+                doc:doc
+            })
+        })
+    })
 }
