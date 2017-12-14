@@ -158,7 +158,8 @@ module.exports = function (app) {
     //发表行为
     app.post('/post',function (req,res) {
         var currentName = req.session.user;
-        var post = new Post(currentName.username,req.body.title,req.body.content);
+        var tags = [req.body.tag1,req.body.tag2,req.body.tag3];
+        var post = new Post(currentName.username,req.body.title,req.body.content,tags);
         post.save(function (err) {
             if (err) {
                 req.flash('error', err);
@@ -307,6 +308,54 @@ module.exports = function (app) {
             }
             req.flash('success','留言成功');
             return res.redirect('back');
+        })
+    })
+//    存档
+    app.get('/archive',checkLogin,function (req,res) {
+        Post.getArchive(function (err,docs) {
+            if(err){
+                req.flash('error',err);
+                return res.redirect('/');
+            }
+            res.render('archive',{
+                title:'存档',
+                user:req.session.user,
+                success:req.flash('success').toString(),
+                error:req.flash('error').toString(),
+                docs:docs
+            })
+        })
+    })
+//    标签
+    app.get('/tags',checkLogin,function (req,res) {
+        Post.getTags(function (err,docs) {
+            if(err){
+                req.flash('error',err);
+                return res.redirect('/');
+            }
+            return res.render('tags',{
+                title:'标签',
+                user:req.session.user,
+                success:req.flash('success').toString(),
+                error:req.flash('error').toString(),
+                docs:docs
+            })
+        })
+    })
+//    查找同种标签下的文章
+    app.get('/tags/:tag',checkLogin,function (req,res) {
+        Post.getTag(req.params.tag,function (err,docs) {
+            if(err){
+                req.flash('error',err);
+                return res.redirect('/');
+            }
+            return res.render('tag',{
+                title:'标签列表页',
+                user:req.session.user,
+                success:req.flash('success').toString(),
+                error:req.flash('error').toString(),
+                docs:docs
+            })
         })
     })
 }
