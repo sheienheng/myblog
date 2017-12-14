@@ -33,12 +33,17 @@ function checkNotLogin(req,res,next) {
 module.exports = function (app) {
     //首页
     app.get('/',function (req,res) {
-        Post.getAll(null, function (err,docs) {
+        //如果当前传递了当前页数的参数，就一这个参数为准，否则就是第一页
+        var page = parseInt(req.query.page) || 1;
+        Post.getTen(null,page,function (err,docs,total) {
             if (err) {
                 posts = [];
             }
             res.render('index', {
                 title: '主页',
+                page:page,//当前页数
+                isFirstPage:(page - 1)*10 == 0,
+                isLastPage:(page - 1)*10 + docs.length == total,
                 user: req.session.user,
                 docs: docs,
                 success: req.flash('success').toString(),
@@ -200,19 +205,23 @@ module.exports = function (app) {
 //    添加一个用户页面  :name说明这个值是动态的
     app.get('/u/:name',function (req,res) {
         //1.检查用户是否存在
+        var page = req.query.page || 1;
         User.get(req.params.name,function (err,user) {
             if(!user){
                 req.flash('error','用户不存在');
                 return res.redirect('/');
             }
         //    2.查询出name对应的该用户的所有文章
-            Post.getAll(user.username,function (err,docs) {
+            Post.getTen(user.username,page,function (err,docs,total) {
                 if(err){
                     req.flash('error',err);
                     res.redirect('/');
                 }
                 return res.render('user',{
                     title:'用户文章列表',
+                    page:page,
+                    isFirstPage:(page - 1)*10 == 0,
+                    isLastPage:(page - 1)*10 + docs.length == total,
                     user:req.session.user,
                     success:req.flash('success').toString(),
                     error:req.flash('error').toString(),
